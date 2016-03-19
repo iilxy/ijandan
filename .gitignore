@@ -60,3 +60,13 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+.idea
+*.db-journal
+meizi.db
+meizi/
+meizi_hot.db
+meizi_hot/
+wuliao.db
+wuliao/
+duanzi.db
