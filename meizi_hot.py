@@ -51,12 +51,16 @@ except OSError:
     pass
 
 def getHtml(url, req_timeout):
-    req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-    'Accept':'text/html;q=0.9,*/*;q=0.8',
+    req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36',
+    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-    'Accept-Encoding':'gzip',
-    'Connection':'close',
-    'Referer':None #注意如果依然不能抓取的话，这里可以设置抓取网站的host
+    'Accept-Encoding':'gzip, deflate, sdch',
+    'Connection':'keep-alive',
+    'Referer':'http://jandan.net/', #注意如果依然不能抓取的话，这里可以设置抓取网站的host
+    'Host':'jandan.net',
+    'Cache-Control':'max-age=0' ,
+    'Accept-Language':'zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,zh-TW;q=0.2',
+    'DNT':'1'
     }
     #req_timeout = 5
     request = urllib2.Request(url,None,req_header)
