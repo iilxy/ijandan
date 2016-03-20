@@ -2,18 +2,18 @@
 #coding=utf-8
 import bs4
 import flask
-import urllib,urllib2,cookielib
+import urllib
 import re
 from bs4 import BeautifulSoup
-import htmllib,formatter
+#import htmllib,formatter
 import os,sys
 import os.path as op
 
-import StringIO
+from io import BytesIO
 import gzip
 
 from flask import Flask, redirect, render_template, request, g, url_for, session, flash, abort, Response, json, jsonify
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 
 #Create App
 app = Flask(__name__)
@@ -54,7 +54,7 @@ def getHtml(url, req_timeout):
     req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36',
     'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-    'Accept-Encoding':'gzip, deflate, sdch',
+    'Accept-Encoding':'gzip',
     'Connection':'keep-alive',
     'Referer':'http://jandan.net/', #注意如果依然不能抓取的话，这里可以设置抓取网站的host
     'Host':'jandan.net',
@@ -63,8 +63,8 @@ def getHtml(url, req_timeout):
     'DNT':'1'
     }
     #req_timeout = 5
-    request = urllib2.Request(url,None,req_header)
-    response = urllib2.urlopen(request,None,req_timeout)
+    req = urllib.request.Request(url,None,req_header)
+    response = urllib.request.urlopen(req,None,req_timeout)
     
     # request = urllib2.Request(url)
     # request.add_header('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11')
@@ -79,11 +79,30 @@ def getHtml(url, req_timeout):
     #html = response.read()
     if isGzip :
         compresseddata = response.read()
-        compressedstream = StringIO.StringIO(compresseddata)
+        compressedstream = BytesIO(compresseddata)
         gzipper = gzip.GzipFile(fileobj=compressedstream)
         data = gzipper.read()
     else:
         data = response.read()
+    return data
+
+def getPic(url, req_timeout):
+    req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36',
+    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+    'Accept-Encoding':'gzip',
+    'Connection':'keep-alive',
+    'Referer':'http://jandan.net/', #注意如果依然不能抓取的话，这里可以设置抓取网站的host
+    'Host':'jandan.net',
+    'Cache-Control':'max-age=0' ,
+    'Accept-Language':'zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,zh-TW;q=0.2',
+    'DNT':'1'
+    }
+    #req_timeout = 5
+    #req = urllib.request.Request(url,None,req_header)
+    response = urllib.request.urlopen(url)
+
+    data = response.read()
     return data
 
 def downloadImage(url):
@@ -93,12 +112,12 @@ def downloadImage(url):
     except:
         pass
     try:
-        cont = getHtml(url, 10) #urllib2.urlopen(url).read()
+        cont = getPic(url, 10) #urllib2.urlopen(url).read()
         #patter = '[0-9]*\.jpg';
         #match = re.search(patter,url);
         name = url.split(u"/")[-1]
         # if match:
-        print u'正在下载文件：', name
+        print (u'正在下载文件：', name)
         filename = path+os.sep+name
         f = open(filename,'w+b')
         f.write(cont)
@@ -120,58 +139,54 @@ html = getHtml("http://jandan.net/top", 10)
 
 soup = BeautifulSoup(html)
 
-#ImgAll = soup.find_all('div', attrs={"id": "girl"})
+ImgAll = soup.find_all('div', attrs={"id": "girl"})
 
-ImgAll=soup.find_all('div', attrs={"class": "text"})
+#ImgAll=soup.find_all('div', attrs={"class": "text"})
 
 if ImgAll.__len__()>=1:
     for image in ImgAll:
         try:
-            link = image.find_all('a')
-            if link[0].attrs["href"] == u'http:/pic':
-                print u"跳过无聊图"
-            else:
-                imgs = image.find_all('img')
-                span=image.find_all('span')
-                nsfw=False
-                if re.search(u'NSFW',image.find_all('p')[0].text):
-                    nsfw = True
-                support = int(span[2].text)
-                unsupport = int(span[3].text)
-                if True:#support > unsupport:
-                    if imgs.__len__()==1:
-                        imgsrc = image.img.attrs['src']
+            imgs = image.find_all('img')
+            span=image.find_all('span')
+            nsfw=False
+            if re.search(u'NSFW',image.find_all('p')[0].text):
+                nsfw = True
+            support = int(span[2].text)
+            unsupport = int(span[3].text)
+            if True:#support > unsupport:
+                if imgs.__len__()==1:
+                    imgsrc = image.img.attrs['src']
+                    if imgsrc.split(u".")[-1].upper() == "GIF":
+                        imgsrc = image.img.attrs["org_src"]
+                    if os.path.exists(op.join(op.dirname(__file__), 'meizi_hot', imgsrc.split(u"/")[-1])):
+                        print (u"正在跳过" + imgsrc)
+                    else:
+                        downloadImage(imgsrc)
+                    #建立数据库
+                    pic = Meizi.query.filter_by(picurl=imgsrc)
+                    if pic.count() == 0:
+                        print (u"正在插入数据库")
+                        db.session.add(Meizi(foldername="meizi_hot", picname=imgsrc.split(u"/")[-1], picurl=imgsrc, oo=support, xx=unsupport, nsfw=nsfw, myoo=0, myxx=0))
+                    else:
+                        print (u"库中已有，跳过")
+                else:
+                    for ii in imgs:
+                        imgsrc = ii.attrs['src']
                         if imgsrc.split(u".")[-1].upper() == "GIF":
-                            imgsrc = image.img.attrs["org_src"]
+                            imgsrc = ii.attrs["org_src"]
                         if os.path.exists(op.join(op.dirname(__file__), 'meizi_hot', imgsrc.split(u"/")[-1])):
-                            print u"正在跳过" + imgsrc
+                            print (u"正在跳过" + imgsrc)
                         else:
                             downloadImage(imgsrc)
                         #建立数据库
                         pic = Meizi.query.filter_by(picurl=imgsrc)
                         if pic.count() == 0:
-                            print u"正在插入数据库"
+                            print (u"正在插入数据库")
                             db.session.add(Meizi(foldername="meizi_hot", picname=imgsrc.split(u"/")[-1], picurl=imgsrc, oo=support, xx=unsupport, nsfw=nsfw, myoo=0, myxx=0))
                         else:
-                            print u"库中已有，跳过"
-                    else:
-                        for ii in imgs:
-                            imgsrc = ii.attrs['src']
-                            if imgsrc.split(u".")[-1].upper() == "GIF":
-                                imgsrc = ii.attrs["org_src"]
-                            if os.path.exists(op.join(op.dirname(__file__), 'meizi_hot', imgsrc.split(u"/")[-1])):
-                                print u"正在跳过" + imgsrc
-                            else:
-                                downloadImage(imgsrc)
-                            #建立数据库
-                            pic = Meizi.query.filter_by(picurl=imgsrc)
-                            if pic.count() == 0:
-                                print u"正在插入数据库"
-                                db.session.add(Meizi(foldername="meizi_hot", picname=imgsrc.split(u"/")[-1], picurl=imgsrc, oo=support, xx=unsupport, nsfw=nsfw, myoo=0, myxx=0))
-                            else:
-                                print u"库中已有，跳过"
-                else:
-                    print u"跳过xx过多的图"
+                            print (u"库中已有，跳过")
+            else:
+                print (u"跳过xx过多的图")
         except:
             pass
 db.session.commit()
