@@ -1,5 +1,7 @@
 #!python2
 #coding=utf-8
+import threading
+
 import bs4
 import flask
 import urllib
@@ -86,21 +88,8 @@ def getHtml(url, req_timeout):
         data = response.read()
     return data
 
-def getPic(url, req_timeout):
-    req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36',
-    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-    'Accept-Encoding':'gzip',
-    'Connection':'keep-alive',
-    'Referer':'http://jandan.net/', #注意如果依然不能抓取的话，这里可以设置抓取网站的host
-    'Host':'jandan.net',
-    'Cache-Control':'max-age=0' ,
-    'Accept-Language':'zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,zh-TW;q=0.2',
-    'DNT':'1'
-    }
-    #req_timeout = 5
-    #req = urllib.request.Request(url,None,req_header)
-    response = urllib.request.urlopen(url)
+def getPic(url):
+    response = urllib.request.urlopen(url,None)
 
     data = response.read()
     return data
@@ -112,7 +101,7 @@ def downloadImage(url):
     except:
         pass
     try:
-        cont = getPic(url, 10) #urllib2.urlopen(url).read()
+        cont = getPic(url) #urllib2.urlopen(url).read()
         #patter = '[0-9]*\.jpg';
         #match = re.search(patter,url);
         name = url.split(u"/")[-1]
@@ -124,6 +113,23 @@ def downloadImage(url):
         f.close()
     except:
         pass
+
+def DownPicMutithread( filepathlist ):
+    print("共有%d个文件需要下载"%len(filepathlist))
+    for file in filepathlist:
+        print( file )
+    print("开始多线程下载")
+    task_threads=[] #存储线程
+    count=1
+    for file in filepathlist:
+        t= threading.Thread( target=downloadImage,args=(file,"第%d个"%count))
+        count=count+1
+        task_threads.append(t)
+    for task in task_threads:
+        task.start()
+    for task in task_threads:
+        task.join() #等待所有线程结束
+    print("线程结束")
 
 def OnlyDigit(mytext):
     if mytext=='':
