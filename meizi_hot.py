@@ -143,7 +143,7 @@ def OnlyDigit(mytext):
 
 html = getHtml("http://jandan.net/top", 10)
 
-soup = BeautifulSoup(html)
+soup = BeautifulSoup(html, "html.parser")
 
 ImgAll = soup.find_all('div', attrs={"id": "girl"})
 
