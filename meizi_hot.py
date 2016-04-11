@@ -113,8 +113,8 @@ def getHtml(url, req_timeout):
     # br.set_debug_responses(True)
 
     # User-Agent (this is cheating, ok?)
-    br.addheaders = [('User-agent',
-                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36')]
+    br.addheaders = [('User-agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'),
+                     ('Host','jandan.net')]
 
     # Open some site, let's pick a random one, the first that pops in mind:
     r = br.open(url)
