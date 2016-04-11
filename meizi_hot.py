@@ -1,5 +1,8 @@
 #!python2
 #coding=utf-8
+import mechanize
+import cookielib
+
 import bs4
 import flask
 import urllib,urllib2,cookielib
@@ -51,40 +54,73 @@ except OSError:
     pass
 
 def getHtml(url, req_timeout):
-    req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36',
-    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-    'Accept-Encoding':'gzip, deflate, sdch',
-    'Connection':'keep-alive',
-    'Referer':'http://jandan.net/', #注意如果依然不能抓取的话，这里可以设置抓取网站的host
-    'Host':'jandan.net',
-    'Cache-Control':'max-age=0' ,
-    'Accept-Language':'zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,zh-TW;q=0.2',
-    'DNT':'1'
-    }
-    #req_timeout = 5
-    request = urllib2.Request(url,None,req_header)
-    response = urllib2.urlopen(request,None,req_timeout)
-    
-    # request = urllib2.Request(url)
-    # request.add_header('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11')
-    # request.add_header('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
-    # request.add_header('Accept-Charset','utf-8;')
-    # request.add_header('Accept-Encoding','gzip,deflate')
-    # request.add_header('Connection','close')
-    # request.add_header('Referer', None)
-    # response = urllib2.urlopen(request)
-    
-    isGzip = response.headers.get('Content-Encoding')
-    #html = response.read()
-    if isGzip :
-        compresseddata = response.read()
-        compressedstream = StringIO.StringIO(compresseddata)
-        gzipper = gzip.GzipFile(fileobj=compressedstream)
-        data = gzipper.read()
-    else:
-        data = response.read()
-    return data
+    # req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36',
+    # 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    # 'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+    # 'Accept-Encoding':'gzip, deflate, sdch',
+    # 'Connection':'keep-alive',
+    # 'Referer':'http://jandan.net/', #注意如果依然不能抓取的话，这里可以设置抓取网站的host
+    # 'Host':'jandan.net',
+    # 'Cache-Control':'max-age=0' ,
+    # 'Accept-Language':'zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,zh-TW;q=0.2',
+    # 'DNT':'1'
+    # }
+    # #req_timeout = 5
+    # request = urllib2.Request(url,None,req_header)
+    # response = urllib2.urlopen(request,None,req_timeout)
+    #
+    # # request = urllib2.Request(url)
+    # # request.add_header('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11')
+    # # request.add_header('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+    # # request.add_header('Accept-Charset','utf-8;')
+    # # request.add_header('Accept-Encoding','gzip,deflate')
+    # # request.add_header('Connection','close')
+    # # request.add_header('Referer', None)
+    # # response = urllib2.urlopen(request)
+    #
+    # isGzip = response.headers.get('Content-Encoding')
+    # #html = response.read()
+    # if isGzip :
+    #     compresseddata = response.read()
+    #     compressedstream = StringIO.StringIO(compresseddata)
+    #     gzipper = gzip.GzipFile(fileobj=compressedstream)
+    #     data = gzipper.read()
+    # else:
+    #     data = response.read()
+    # return data
+
+
+    # Browser
+    br = mechanize.Browser()
+
+    # Cookie Jar
+    cj = cookielib.LWPCookieJar()
+    br.set_cookiejar(cj)
+
+    # Browser options
+    br.set_handle_equiv(True)
+    br.set_handle_gzip(False)
+    br.set_handle_redirect(True)
+    br.set_handle_referer(True)
+    br.set_handle_robots(False)
+
+    # Follows refresh 0 but not hangs on refresh > 0
+    br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+    # Want debugging messages?
+    # br.set_debug_http(True)
+    # br.set_debug_redirects(True)
+    # br.set_debug_responses(True)
+
+    # User-Agent (this is cheating, ok?)
+    br.addheaders = [('User-agent',
+                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36')]
+
+    # Open some site, let's pick a random one, the first that pops in mind:
+    r = br.open(url)
+    html = r.read()
+
+    return html
 
 def downloadImage(url):
     path = op.join(op.dirname(__file__), 'meizi_hot')
@@ -128,7 +164,7 @@ if ImgAll.__len__()>=1:
     for image in ImgAll:
         try:
             link = image.find_all('a')
-            if link[0].attrs["href"] == u'http:/pic':
+            if unicode(link[0].string) == u'\u65e0\u804a\u56fe':
                 print u"跳过无聊图"
             else:
                 imgs = image.find_all('img')
