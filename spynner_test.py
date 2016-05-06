@@ -4,13 +4,13 @@
 import spynner
 import pyquery
 
-browser = spynner.Browser(debug_level=spynner.DEBUG)
+browser = spynner.Browser(debug_level=spynner.DEBUG,download_directory="meizi_hot")
 # 设置代理
 #browser.set_proxy('http://host:port')
 #browser.create_webview()
 #browser.show()
 browser.set_html_parser(pyquery.PyQuery)
-#browser.load("http://iilxy.com")
+#browser.load("http://jandan.net")
 try:
     browser.load(url='http://jandan.net/top', load_timeout=120, tries=1,headers=[('User-agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'),
                      ('Host','jandan.net')])
