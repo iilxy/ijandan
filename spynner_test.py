@@ -21,7 +21,18 @@ else:
     allimg = browser.soup("img")
     for img in allimg:
         print img.attrib['src']
-    debug = 1
+    alldiv = browser.soup("div")
+    for div in alldiv:
+        try:
+            if div.attrib['id'] == "girl":
+                d = pyquery.PyQuery(div)
+                allgridimg = d('img')
+                for girl in allgridimg:
+                    print girl.attrib['src']
+                    debug=1
+        except :
+            print 'no id'
+
 #d = pyquery.PyQuery(browser.html)
 # browser.select("#esen")
 # browser.fill("input[name=w]", "hola")
