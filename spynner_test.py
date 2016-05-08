@@ -86,7 +86,10 @@ else:
                 d = pyquery.PyQuery(div)
                 allgridimg = d('img')
                 for girl in allgridimg:
-                    downloadImage(girl.attrib['src'],'meizi_hot1')
+                    if girl.attrib['src'][-3:].upper() == "GIF":
+                        downloadImage(girl.attrib['org_src'], 'meizi_hot1')
+                    else:
+                        downloadImage(girl.attrib['src'],'meizi_hot1')
                     debug=1
         except :
             pass
