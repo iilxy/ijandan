@@ -9,6 +9,37 @@ import urllib,urllib2,cookielib
 import StringIO
 import gzip
 
+from flask import Flask, redirect, render_template, request, g, url_for, session, flash, abort, Response, json, jsonify
+from flask.ext.sqlalchemy import SQLAlchemy
+
+#Create App
+app = Flask(__name__)
+#app.debug = True
+
+# Configure
+app.secret_key = 'herh5h4h4her6rsgfjfjfjfjgfjgfjgfjgfjgfjgfjgfjfj'
+app.config['DATABASE_FILE'] = os.path.join(app.root_path, 'meizi_hot.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + app.config['DATABASE_FILE']
+app.config['SQLALCHEMY_ECHO'] = False
+
+db = SQLAlchemy(app)
+
+class Meizi(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    foldername = db.Column(db.Unicode(50))
+    picname = db.Column(db.Unicode(50))
+    picurl = db.Column(db.UnicodeText)
+    oo = db.Column(db.Integer)
+    xx = db.Column(db.Integer)
+    myoo = db.Column(db.Integer)
+    myxx = db.Column(db.Integer)
+    nsfw = db.Column(db.Boolean)
+
+    def __unicode__(self):
+        return self.picname
+
+db.create_all()
+
 def getHtml(url, req_timeout):
     req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
     'Accept':'text/html;q=0.9,*/*;q=0.8',
@@ -86,13 +117,21 @@ else:
                 d = pyquery.PyQuery(div)
                 allgridimg = d('img')
                 for girl in allgridimg:
-                    if girl.attrib['src'][-3:].upper() == "GIF":
-                        downloadImage(girl.attrib['org_src'], 'meizi_hot1')
+                    # 建立数据库
+                    pic = Meizi.query.filter_by(picurl=girl.attrib['src'])
+                    if pic.count() == 0:
+                        print u"正在插入数据库"
+                        db.session.add(Meizi(foldername="meizi_hot", picname=girl.attrib['src'].split(u"/")[-1],
+                                             picurl=girl.attrib['src'], oo=0, xx=0, nsfw=True, myoo=0, myxx=0))
+                        if girl.attrib['src'][-3:].upper() == "GIF":
+                            downloadImage(girl.attrib['org_src'], 'meizi_hot')
+                        else:
+                            downloadImage(girl.attrib['src'],'meizi_hot')
                     else:
-                        downloadImage(girl.attrib['src'],'meizi_hot1')
-                    debug=1
+                        print u"库中已有，跳过"
         except :
             pass
+db.session.commit()
 
 
 #d = pyquery.PyQuery(browser.html)
