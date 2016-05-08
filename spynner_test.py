@@ -3,6 +3,64 @@
 
 import spynner
 import pyquery
+import os,sys
+import os.path as op
+import urllib,urllib2,cookielib
+import StringIO
+import gzip
+
+def getHtml(url, req_timeout):
+    req_header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+    'Accept':'text/html;q=0.9,*/*;q=0.8',
+    'Accept-Charset':'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+    'Accept-Encoding':'gzip',
+    'Connection':'close',
+    'Referer':None #注意如果依然不能抓取的话，这里可以设置抓取网站的host
+    }
+    #req_timeout = 5
+    request = urllib2.Request(url,None,req_header)
+    response = urllib2.urlopen(request,None,req_timeout)
+
+    # request = urllib2.Request(url)
+    # request.add_header('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11')
+    # request.add_header('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+    # request.add_header('Accept-Charset','utf-8;')
+    # request.add_header('Accept-Encoding','gzip,deflate')
+    # request.add_header('Connection','close')
+    # request.add_header('Referer', None)
+    # response = urllib2.urlopen(request)
+
+    isGzip = response.headers.get('Content-Encoding')
+    #html = response.read()
+    if isGzip :
+        compresseddata = response.read()
+        compressedstream = StringIO.StringIO(compresseddata)
+        gzipper = gzip.GzipFile(fileobj=compressedstream)
+        data = gzipper.read()
+    else:
+        data = response.read()
+    return data
+
+
+def downloadImage(url,dir2down):
+    path = op.join(op.dirname(__file__), dir2down)
+    try:
+        os.mkdir(path)
+    except:
+        pass
+    try:
+        cont = getHtml(url, 10)  # urllib2.urlopen(url).read()
+        # patter = '[0-9]*\.jpg';
+        # match = re.search(patter,url);
+        name = url.split(u"/")[-1]
+        # if match:
+        print u'正在下载文件：', name
+        filename = path + os.sep + name
+        f = open(filename, 'w+b')
+        f.write(cont)
+        f.close()
+    except:
+        pass
 
 browser = spynner.Browser(debug_level=spynner.DEBUG,download_directory="meizi_hot")
 # 设置代理
@@ -28,10 +86,11 @@ else:
                 d = pyquery.PyQuery(div)
                 allgridimg = d('img')
                 for girl in allgridimg:
-                    print girl.attrib['src']
+                    downloadImage(girl.attrib['src'],'meizi_hot1')
                     debug=1
         except :
-            print 'no id'
+            pass
+
 
 #d = pyquery.PyQuery(browser.html)
 # browser.select("#esen")
