@@ -8,6 +8,7 @@ import glob
 import py2exe
 import sys
 
+import pkg_resources
 # If run without args, build executables, in quiet mode.
 if len(sys.argv) == 1:
     sys.argv.append("py2exe")
@@ -58,7 +59,7 @@ MyApp = Target(
     script = "spynner_test.py",
     #other_resources = [(24,1,manifest)],
     icon_resources = [(1, "lsc.ico")],
-    dest_base = "SexyGirl")
+    dest_base = "dist")
 
 py2exe_options = {
         "includes": ["sqlite3","sip"], #PyQt程序打包时需要
@@ -74,7 +75,7 @@ data_files=[("",
                    ["lsc.ico","msvcr90.dll"])]
 
 setup(
-      name = u'SexyGirl',
+      name = u'dist',
       version = '1.0',
       #windows = [MyApp], 
 	  console = [MyApp],
