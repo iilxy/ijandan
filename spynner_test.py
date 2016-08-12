@@ -1,6 +1,9 @@
 #!python2
 #coding=utf-8
 
+#Ghost.py 一个基于webkit的页面渲染器
+#from ghost import Ghost
+
 import spynner
 import pyquery
 import os,sys
